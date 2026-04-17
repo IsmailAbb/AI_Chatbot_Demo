@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>eLuminate Marketing — AI Assistant</title>
+    <link rel="icon" href="favicon.svg" type="image/svg+xml">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="chat-container">
+        <header class="chat-header">
+            <div class="header-logo">
+                <img src="./eLuminate_logo.png" alt="eLuminate Marketing" id="logo" />
+            </div>
+            <div class="header-text">
+                <h1>eLuminate Marketing</h1>
+                <p>AI Assistant</p>
+            </div>
+        </header>
+
+        <div class="chat-messages" id="chatMessages">
+            <div class="message assistant">
+                <div class="message-content">
+                    Hey there! I'm eLuminate Marketing's AI assistant. Whether you're curious about our services, want marketing tips, or just want to chat about growing your business — I'm here to help. What's on your mind?
+                </div>
+            </div>
+
+            <div class="suggested-questions" id="suggestedQuestions">
+                <button class="chip" data-question="What services does eLuminate offer?">What services do you offer?</button>
+                <button class="chip" data-question="How does The eLuminate Effect work?">How does The eLuminate Effect work?</button>
+                <button class="chip" data-question="What results have your clients seen?">What results have clients seen?</button>
+            </div>
+        </div>
+
+        <form class="chat-input" id="chatForm">
+            <input
+                type="text"
+                id="userInput"
+                placeholder="Ask me anything about eLuminate..."
+                autocomplete="off"
+                maxlength="500"
+                required
+            />
+            <button type="submit" id="sendBtn">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="22" y1="2" x2="11" y2="13"></line>
+                    <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+                </svg>
+            </button>
+        </form>
+    </div>
+
+    <script src="app.js"></script>
+    <script>
+        const chatMessages = document.getElementById('chatMessages');
+        const chatForm = document.getElementById('chatForm');
+        const userInput = document.getElementById('userInput');
+        const sendBtn = document.getElementById('sendBtn');
+
+        function appendMessage(role, text) {
+            const div = document.createElement('div');
+            div.className = `message ${role}`;
+            const content = role === 'assistant' ? renderMarkdown(text) : escapeHtml(text);
+            div.innerHTML = `<div class="message-content">${content}</div>`;
+            chatMessages.appendChild(div);
+            autoScroll();
+        }
+
+        function showThinking() {
+            const div = document.createElement('div');
+            div.className = 'message assistant thinking-message';
+            div.innerHTML = `
+                <div class="message-content thinking">
+                    <div class="thinking-dots">
+                        <span></span><span></span><span></span>
+                    </div>
+                </div>
+            `;
+            chatMessages.appendChild(div);
+            autoScroll();
+        }
+
+        function removeThinking() {
+            const el = chatMessages.querySelector('.thinking-message');
+            if (el) el.remove();
+        }
+
+        function escapeHtml(str) {
+            const div = document.createElement('div');
+            div.textContent = str;
+            return div.innerHTML;
+        }
+
+        // Suggested question chips
+        const suggestedQuestions = document.getElementById('suggestedQuestions');
+
+        suggestedQuestions.addEventListener('click', (e) => {
+            const chip = e.target.closest('.chip');
+            if (!chip) return;
+            const question = chip.dataset.question;
+            suggestedQuestions.remove();
+            userInput.value = question;
+            chatForm.dispatchEvent(new Event('submit'));
+        });
+
+        chatForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const text = userInput.value.trim();
+            if (!text) return;
+
+            appendMessage('user', text);
+            userInput.value = '';
+            sendBtn.disabled = true;
+            const chips = document.getElementById('suggestedQuestions');
+            if (chips) chips.remove();
+            showThinking();
+
+            try {
+                await sendMessage(text);
+            } catch (err) {
+                removeThinking();
+                appendMessage('assistant', 'Sorry, something went wrong. Please try again!');
+            }
+
+            sendBtn.disabled = false;
+        });
+    </script>
+</body>
+</html>
